@@ -1,0 +1,11 @@
+# CODEOWNERS - Asigna revisores automáticos a PRs
+# Formato: archivo o patrón @usuario
+
+# Archivo principal del servidor
+* @LACV
+
+# Configuración
+opencode.json @LACV
+
+# Documentación
+*.md @LACV
