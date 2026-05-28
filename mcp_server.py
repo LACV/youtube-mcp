@@ -7,7 +7,10 @@ Autor: LACV
 
 import os
 import sys
+import time
+import random
 from pathlib import Path
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
@@ -168,7 +171,10 @@ async def youtube_schedule_all_videos(
     """
     from youtube.upload import generate_title, generate_hashtags, generate_description, upload_video
     from youtube.scheduler import calculate_next_schedule
-    from db.database import get_db_connection, get_pending_videos, mark_uploading, mark_published, mark_failed
+    from db.database import (
+        get_db_connection, check_video_uploaded, 
+        get_pending_videos, mark_uploading, mark_published, mark_failed
+    )
     
     narrations_dir = narrations_dir or YOUTUBE_NARRATIONS_DIR
     if not os.path.isdir(narrations_dir):
@@ -201,6 +207,11 @@ async def youtube_schedule_all_videos(
             for v in get_pending_videos(conn) if v.get("fecha_programada")
         ]
     
+    # Simular comportamiento humano: delay inicial aleatorio antes de empezar
+    initial_delay = random.uniform(30, 120)  # 30-120 segundos
+    print(f"🔍 Revisando {len(videos)} videos pendientes...")
+    time.sleep(initial_delay)
+    
     for i, video in enumerate(videos):
         video_path = video.get("archivo_mp4")
         if not video_path or not os.path.isfile(video_path):
@@ -230,6 +241,14 @@ async def youtube_schedule_all_videos(
         offset = i
         scheduled_time = calculate_next_schedule(scheduled_videos, offset)
         
+        # Simular comportamiento humano: delay realista entre cada click de subida (2-5 min)
+        if i > 0:
+            human_delay = random.uniform(120, 300)
+            mins = int(human_delay // 60)
+            secs = int(human_delay % 60)
+            print(f"⏳ Revisando siguiente video... ({mins}m {secs}s)")
+            time.sleep(human_delay)
+        
         try:
             result = upload_video(
                 service=service,
@@ -256,6 +275,9 @@ async def youtube_schedule_all_videos(
                 "scheduled_time": scheduled_time,
                 "status": "scheduled" if not published else "published"
             })
+            
+            # Agregar a la lista de programados para el siguiente video
+            scheduled_videos.append({"fecha_programada": scheduled_time})
         
         except Exception as e:
             error_msg = str(e)[:200]
